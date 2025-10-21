@@ -61,4 +61,61 @@ class CommentController extends Controller
 
         return response()->json($comment, 201);
     }
+
+    /**
+     * Update the specified comment in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Decision  $decision
+     * @param  \App\Models\Comment  $comment
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, Decision $decision, Comment $comment)
+    {
+        // Check if user is authorized to update this comment
+        if ($comment->user_id != Auth::id()) {
+            return response()->json(['message' => 'No estás autorizado para editar este comentario'], 403);
+        }
+
+        // Validate the request
+        $request->validate([
+            'content' => 'required|string|min:10|max:1000',
+        ]);
+
+        // Update the comment
+        $comment->content = $request->content;
+        $comment->save();
+
+        // Return the updated comment
+        $comment->load('user:id,name,email,avatar');
+        return response()->json($comment);
+    }
+
+    /**
+     * Remove the specified comment from storage.
+     *
+     * @param  \App\Models\Decision  $decision
+     * @param  \App\Models\Comment  $comment
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(Decision $decision, Comment $comment)
+    {
+        // Check if user is authorized to delete this comment
+        if ($comment->user_id != Auth::id()) {
+            return response()->json(['message' => 'No estás autorizado para eliminar este comentario'], 403);
+        }
+
+        // Delete the comment
+        $comment->delete();
+
+        // Decrease user's karma (penalty for deleting content)
+        $user = Auth::user();
+        $user->karma = max(0, $user->karma - 2); // Ensure karma doesn't go below 0
+        $user->save();
+
+        // Update user's badge based on new karma
+        $user->updateBadge();
+
+        return response()->json(['message' => 'Comentario eliminado correctamente']);
+    }
 }

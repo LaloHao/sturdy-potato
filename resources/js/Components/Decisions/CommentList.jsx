@@ -1,25 +1,50 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/solid";
+import { PencilIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import Avatar from "@/Components/Avatar";
+import PrimaryButton from "@/Components/PrimaryButton";
+import InputError from "@/Components/InputError";
 import axios from "axios";
+import { usePage } from '@inertiajs/react';
 
 export default function CommentList({ decisionId }) {
+    const { auth } = usePage().props;
     const [comments, setComments] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [pagination, setPagination] = useState({
         current_page: 1,
         last_page: 1,
         total: 0,
     });
+    const [editingCommentId, setEditingCommentId] = useState(null);
+    const [editContent, setEditContent] = useState('');
+    const [editError, setEditError] = useState('');
+    const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-    const fetchComments = async (page = 1) => {
-        setLoading(true);
+    // Reference for infinite scroll
+    const observerTarget = useRef(null);
+    const listContainerRef = useRef(null);
+
+    const fetchComments = async (page = 1, append = false) => {
+        if (page === 1) {
+            setLoading(true);
+        } else {
+            setLoadingMore(true);
+        }
+
         try {
             const response = await axios.get(
                 `/api/decisions/${decisionId}/comments?page=${page}`
             );
             const data = response.data;
-            setComments(data.data);
+
+            if (append) {
+                setComments(prevComments => [...prevComments, ...data.data]);
+            } else {
+                setComments(data.data);
+            }
+
             setPagination({
                 current_page: data.current_page,
                 last_page: data.last_page,
@@ -29,8 +54,31 @@ export default function CommentList({ decisionId }) {
             console.error("Error fetching comments:", error);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
+
+    // Setup intersection observer for infinite scroll
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            entries => {
+                if (entries[0].isIntersecting && pagination.current_page < pagination.last_page && !loadingMore) {
+                    fetchComments(pagination.current_page + 1, true);
+                }
+            },
+            { threshold: 1.0 }
+        );
+
+        if (observerTarget.current) {
+            observer.observe(observerTarget.current);
+        }
+
+        return () => {
+            if (observerTarget.current) {
+                observer.unobserve(observerTarget.current);
+            }
+        };
+    }, [pagination, loadingMore]);
 
     useEffect(() => {
         if (decisionId) {
@@ -38,8 +86,73 @@ export default function CommentList({ decisionId }) {
         }
     }, [decisionId]);
 
-    const handlePageChange = (page) => {
-        fetchComments(page);
+    // Edit comment functionality
+    const startEditing = (comment) => {
+        setEditingCommentId(comment.id);
+        setEditContent(comment.content);
+        setEditError('');
+    };
+
+    const cancelEditing = () => {
+        setEditingCommentId(null);
+        setEditContent('');
+        setEditError('');
+    };
+
+    const submitEdit = async (commentId) => {
+        if (editContent.trim().length < 10) {
+            setEditError('El comentario debe tener al menos 10 caracteres.');
+            return;
+        }
+
+        try {
+            const response = await axios.put(
+                `/api/decisions/${decisionId}/comments/${commentId}`,
+                { content: editContent }
+            );
+
+            // Update the comment in the list
+            setComments(prevComments =>
+                prevComments.map(comment =>
+                    comment.id === commentId ? { ...comment, content: editContent } : comment
+                )
+            );
+
+            cancelEditing();
+        } catch (error) {
+            console.error("Error updating comment:", error);
+            setEditError(error.response?.data?.message || 'Error al actualizar el comentario');
+        }
+    };
+
+    // Delete comment functionality
+    const confirmDelete = (commentId) => {
+        setDeleteConfirm(commentId);
+    };
+
+    const cancelDelete = () => {
+        setDeleteConfirm(null);
+    };
+
+    const deleteComment = async (commentId) => {
+        try {
+            await axios.delete(`/api/decisions/${decisionId}/comments/${commentId}`);
+
+            // Remove the comment from the list
+            setComments(prevComments =>
+                prevComments.filter(comment => comment.id !== commentId)
+            );
+
+            // Update the total count
+            setPagination(prev => ({
+                ...prev,
+                total: prev.total - 1
+            }));
+
+            cancelDelete();
+        } catch (error) {
+            console.error("Error deleting comment:", error);
+        }
     };
 
     const formatDate = (dateString) => {
@@ -114,7 +227,7 @@ export default function CommentList({ decisionId }) {
     }
 
     return (
-        <div>
+        <div ref={listContainerRef}>
             <h3 className="font-semibold text-gray-700 mb-4">
                 Comentarios ({pagination.total})
             </h3>
@@ -133,58 +246,109 @@ export default function CommentList({ decisionId }) {
                                     <h4 className="text-sm font-semibold text-gray-800">
                                         {comment.user?.name || "Usuario"}
                                     </h4>
-                                    <span
-                                        className="text-xs text-gray-400"
-                                        title={new Date(
-                                            comment.created_at
-                                        ).toLocaleString("es-ES", {
-                                            day: "2-digit",
-                                            month: "2-digit",
-                                            year: "numeric",
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                        })}
-                                    >
-                                        {formatDate(comment.created_at)}
-                                    </span>
+                                    <div className="flex items-center space-x-2">
+                                        {/* Edit/Delete buttons only for comment author */}
+                                        {auth.user && auth.user.id === comment.user_id && !editingCommentId && !deleteConfirm && (
+                                            <div className="flex space-x-2">
+                                                <button
+                                                    onClick={() => startEditing(comment)}
+                                                    className="text-gray-400 hover:text-indigo-600 transition-colors"
+                                                    title="Editar comentario"
+                                                >
+                                                    <PencilIcon className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => confirmDelete(comment.id)}
+                                                    className="text-gray-400 hover:text-red-600 transition-colors"
+                                                    title="Eliminar comentario"
+                                                >
+                                                    <TrashIcon className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        <span
+                                            className="text-xs text-gray-400"
+                                            title={new Date(comment.created_at).toLocaleString("es-ES", {
+                                                day: "2-digit",
+                                                month: "2-digit",
+                                                year: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit"
+                                            })}
+                                        >
+                                            {formatDate(comment.created_at)}
+                                        </span>
+                                    </div>
                                 </div>
-                                <p className="text-gray-600 whitespace-pre-wrap">
-                                    {comment.content}
-                                </p>
+
+                                {/* Edit mode */}
+                                {editingCommentId === comment.id ? (
+                                    <div>
+                                        <textarea
+                                            value={editContent}
+                                            onChange={(e) => setEditContent(e.target.value)}
+                                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-gray-600 mb-2"
+                                            rows={4}
+                                            minLength={10}
+                                            maxLength={1000}
+                                        />
+                                        {editError && <InputError message={editError} className="mt-1 mb-2" />}
+                                        <div className="flex justify-end space-x-2 mt-2">
+                                            <button
+                                                onClick={cancelEditing}
+                                                className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md"
+                                            >
+                                                Cancelar
+                                            </button>
+                                            <PrimaryButton
+                                                onClick={() => submitEdit(comment.id)}
+                                                className="px-3 py-1 text-sm"
+                                            >
+                                                Guardar cambios
+                                            </PrimaryButton>
+                                        </div>
+                                    </div>
+                                ) : deleteConfirm === comment.id ? (
+                                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-2">
+                                        <p className="text-sm text-red-700">
+                                            ¿Estás seguro de que deseas eliminar este comentario? Esta acción no se puede deshacer.
+                                        </p>
+                                        <div className="flex justify-end space-x-2 mt-2">
+                                            <button
+                                                onClick={cancelDelete}
+                                                className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md"
+                                            >
+                                                Cancelar
+                                            </button>
+                                            <button
+                                                onClick={() => deleteComment(comment.id)}
+                                                className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md"
+                                            >
+                                                Eliminar
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="text-gray-600 whitespace-pre-wrap">
+                                        {comment.content}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
                 ))}
-            </div>
 
-            {pagination.last_page > 1 && (
-                <div className="flex justify-center items-center space-x-4 mt-6">
-                    <button
-                        onClick={() =>
-                            handlePageChange(pagination.current_page - 1)
-                        }
-                        disabled={pagination.current_page === 1}
-                        className="p-2 rounded-full border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <ChevronLeftIcon className="h-4 w-4" />
-                    </button>
-                    <span className="text-sm text-gray-600">
-                        Página {pagination.current_page} de{" "}
-                        {pagination.last_page}
-                    </span>
-                    <button
-                        onClick={() =>
-                            handlePageChange(pagination.current_page + 1)
-                        }
-                        disabled={
-                            pagination.current_page === pagination.last_page
-                        }
-                        className="p-2 rounded-full border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <ChevronRightIcon className="h-4 w-4" />
-                    </button>
-                </div>
-            )}
+                {/* Infinite scroll loading indicator */}
+                {loadingMore && (
+                    <div className="flex justify-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-indigo-600"></div>
+                    </div>
+                )}
+
+                {/* Intersection observer target */}
+                <div ref={observerTarget} className="h-4 w-full" />
+            </div>
         </div>
     );
 }

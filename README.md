@@ -28,8 +28,11 @@ Una plataforma web donde los usuarios pueden crear decisiones importantes de su 
 - ✅ Comentarios en decisiones independientes de los votos
 - ✅ Avatares personalizados para cada usuario
 - ✅ Timestamps relativos (ej: "hace 2 horas")
-- ✅ Paginación de comentarios
+- ✅ Paginación de comentarios con scroll infinito
 - ✅ Incremento automático de karma al comentar
+- ✅ Edición y eliminación de comentarios propios
+- ✅ Textarea auto-expandible para mayor comodidad
+- ✅ Diálogo de confirmación antes de publicar o eliminar
 
 ### Dashboard Personal
 - ✅ Estadísticas de decisiones y votos
@@ -214,9 +217,19 @@ La plataforma ahora cuenta con un sistema de comentarios independiente de los vo
    - Al añadir un comentario, tu karma aumentará automáticamente en 5 puntos
    - Esto puede cambiar tu badge si alcanzas los umbrales necesarios
 
-5. **Paginación**:
-   - Si hay más de 20 comentarios, se activará la paginación
-   - Utiliza los controles de navegación en la parte inferior para ver más comentarios
+5. **Scroll Infinito**:
+   - Si hay más de 20 comentarios, se cargarán automáticamente más comentarios al llegar al final de la página
+   - Un indicador de carga muestra cuando se están cargando más comentarios
+
+6. **Editar y Eliminar Comentarios**:
+   - Los usuarios pueden editar y eliminar sus propios comentarios
+   - Botones de edición y eliminación aparecen solo para el autor del comentario
+   - Diálogo de confirmación antes de eliminar un comentario
+   
+7. **Mejoras de UX**:
+   - Textarea auto-expandible que crece con el contenido
+   - Diálogo de confirmación antes de publicar un nuevo comentario
+   - Notificaciones de éxito y error para acciones del usuario
 
 ### Decisiones Técnicas
 
@@ -235,10 +248,17 @@ La plataforma ahora cuenta con un sistema de comentarios independiente de los vo
 4. **Seguridad en las peticiones**:
    - Uso de Axios para manejar automáticamente los tokens CSRF
    - Validación tanto en el cliente como en el servidor para los comentarios
+   - Verificación de autorización para editar/eliminar solo los comentarios propios
 
 5. **API RESTful**:
-   - Endpoints separados para listar (`GET`) y crear (`POST`) comentarios
+   - Endpoints separados para listar (`GET`), crear (`POST`), editar (`PUT`) y eliminar (`DELETE`) comentarios
    - Paginación implementada en el backend para optimizar el rendimiento
+   - Implementación de scroll infinito en el frontend
+
+6. **UX Avanzada**:
+   - TextArea auto-expandible que se ajusta al contenido a medida que escribes
+   - Diálogos de confirmación para prevenir acciones accidentales
+   - Intersection Observer para implementar scroll infinito de manera eficiente
 
 6. **Pruebas automatizadas**:
    - Tests que validan tanto la funcionalidad como la seguridad del sistema de comentarios
@@ -269,6 +289,8 @@ La plataforma ahora cuenta con un sistema de comentarios independiente de los vo
 - `POST /api/votes` - Votar
 - `DELETE /api/votes/{id}` - Eliminar voto
 - `POST /api/decisions/{decision}/comments` - Crear comentario
+- `PUT /api/decisions/{decision}/comments/{comment}` - Editar comentario
+- `DELETE /api/decisions/{decision}/comments/{comment}` - Eliminar comentario
 
 ## 🐛 Solución de Problemas
 

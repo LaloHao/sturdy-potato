@@ -58,6 +58,8 @@ Route::middleware('auth')->group(function () {
 
         // Comments routes for authenticated users
         Route::post('decisions/{decision}/comments', [CommentController::class, 'store']);
+        Route::put('decisions/{decision}/comments/{comment}', [CommentController::class, 'update']);
+        Route::delete('decisions/{decision}/comments/{comment}', [CommentController::class, 'destroy']);
     });
 });
 
