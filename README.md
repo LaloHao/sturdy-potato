@@ -24,6 +24,13 @@ Una plataforma web donde los usuarios pueden crear decisiones importantes de su 
 - ✅ Resultados en tiempo real
 - ✅ No puedes votar en tus propias decisiones
 
+### Sistema de Comentarios
+- ✅ Comentarios en decisiones independientes de los votos
+- ✅ Avatares personalizados para cada usuario
+- ✅ Timestamps relativos (ej: "hace 2 horas")
+- ✅ Paginación de comentarios
+- ✅ Incremento automático de karma al comentar
+
 ### Dashboard Personal
 - ✅ Estadísticas de decisiones y votos
 - ✅ Karma acumulado visible
@@ -112,11 +119,13 @@ laravel-app/
 │   ├── Http/Controllers/
 │   │   ├── DecisionController.php    # API de decisiones
 │   │   ├── VoteController.php        # Sistema de votación
+│   │   ├── CommentController.php     # Sistema de comentarios
 │   │   └── DashboardController.php   # Dashboard
 │   └── Models/
 │       ├── Decision.php              # Modelo de decisión
 │       ├── Option.php                # Opciones de decisión
 │       ├── Vote.php                  # Votos
+│       ├── Comment.php               # Comentarios
 │       └── User.php                  # Usuario extendido
 ├── database/
 │   ├── data/
@@ -127,7 +136,11 @@ laravel-app/
 ├── resources/
 │   └── js/
 │       ├── Components/
+│       │   ├── Avatar.jsx           # Componente de avatar de usuario
 │       │   └── Decisions/           # Componentes React
+│       │       ├── CommentList.jsx  # Lista de comentarios
+│       │       ├── CommentForm.jsx  # Formulario para crear comentarios
+│       │       └── ...
 │       └── Pages/
 │           └── Decisions/           # Páginas de decisiones
 │               ├── Index.jsx        # Lista de decisiones
@@ -166,6 +179,70 @@ php artisan db:seed --class=DecisionSeeder
 5. **Dashboard**: Ve tus estadísticas, karma y badge
 6. **Mis Decisiones**: Gestiona y marca tus decisiones como resueltas
 7. **Decisiones Votadas**: Revisa en qué has participado
+8. **Comentarios**: Comenta en las decisiones para dar tu opinión independiente de tu voto
+
+## 💬 Sistema de Comentarios
+
+La plataforma ahora cuenta con un sistema de comentarios independiente de los votos, permitiendo a los usuarios expresar sus opiniones de manera más detallada.
+
+### Capturas de Pantalla
+
+#### Comentarios en una decisión
+![Comentarios en una decisión](/capturas/3-comentarios.png)
+
+#### Comentarios sin autenticación
+![Comentarios sin autenticación](/capturas/comentarios-sin-autentication.png)
+
+#### Tests de la funcionalidad
+![Tests de la funcionalidad](/capturas/tests.png)
+
+### Instrucciones para probar la funcionalidad
+
+1. **Ver comentarios**: Navega a cualquier decisión para ver los comentarios existentes. Los comentarios son visibles para todos los usuarios, estén autenticados o no.
+
+2. **Añadir comentarios**: 
+   - Inicia sesión con cualquier cuenta
+   - Navega a una decisión activa
+   - Escribe tu comentario en el formulario en la parte superior de la sección de comentarios
+   - Haz clic en "Enviar comentario"
+   
+3. **Visualización de tiempo relativo**:
+   - Los comentarios muestran el tiempo transcurrido desde que fueron publicados (ej: "hace 5 minutos", "hace 2 horas")
+   - Pasa el cursor sobre el timestamp para ver la fecha y hora exactas
+
+4. **Recompensa de karma**:
+   - Al añadir un comentario, tu karma aumentará automáticamente en 5 puntos
+   - Esto puede cambiar tu badge si alcanzas los umbrales necesarios
+
+5. **Paginación**:
+   - Si hay más de 20 comentarios, se activará la paginación
+   - Utiliza los controles de navegación en la parte inferior para ver más comentarios
+
+### Decisiones Técnicas
+
+1. **Modelo de datos independiente**:
+   - Se creó un modelo `Comment` separado del modelo `Vote` para permitir comentarios sin necesidad de votar
+   - Esto permite una mayor flexibilidad y separación de responsabilidades
+
+2. **Timestamps relativos**:
+   - Implementación de timestamps relativos para mejorar la experiencia del usuario
+   - Se mantiene la fecha exacta accesible mediante tooltips para preservar el contexto temporal
+
+3. **Avatares personalizados**:
+   - Componente `Avatar` reutilizable que genera colores consistentes basados en el nombre de usuario
+   - Muestra las iniciales del usuario cuando no hay imagen de avatar disponible
+
+4. **Seguridad en las peticiones**:
+   - Uso de Axios para manejar automáticamente los tokens CSRF
+   - Validación tanto en el cliente como en el servidor para los comentarios
+
+5. **API RESTful**:
+   - Endpoints separados para listar (`GET`) y crear (`POST`) comentarios
+   - Paginación implementada en el backend para optimizar el rendimiento
+
+6. **Pruebas automatizadas**:
+   - Tests que validan tanto la funcionalidad como la seguridad del sistema de comentarios
+   - Pruebas de integración para validar el flujo completo de la funcionalidad
 
 ## 🏗️ Stack Tecnológico
 
@@ -181,6 +258,7 @@ php artisan db:seed --class=DecisionSeeder
 ### Públicos
 - `GET /api/decisions` - Lista de decisiones
 - `GET /api/decisions/{id}` - Ver decisión
+- `GET /api/decisions/{decision}/comments` - Listar comentarios de una decisión
 
 ### Autenticados
 - `POST /api/decisions` - Crear decisión
@@ -190,6 +268,7 @@ php artisan db:seed --class=DecisionSeeder
 - `GET /api/voted-decisions` - Decisiones votadas
 - `POST /api/votes` - Votar
 - `DELETE /api/votes/{id}` - Eliminar voto
+- `POST /api/decisions/{decision}/comments` - Crear comentario
 
 ## 🐛 Solución de Problemas
 
