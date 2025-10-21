@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, usePage } from '@inertiajs/react';
 import VoteOption from '@/Components/Decisions/VoteOption';
+import CommentList from '@/Components/Decisions/CommentList';
+import CommentForm from '@/Components/Decisions/CommentForm';
 import { ClockIcon, UserIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import Avatar from '@/Components/Avatar';
 
 export default function Show({ id }) {
     const { auth } = usePage().props;
@@ -11,6 +14,7 @@ export default function Show({ id }) {
     const [selectedOption, setSelectedOption] = useState(null);
     const [comment, setComment] = useState('');
     const [voting, setVoting] = useState(false);
+    const [commentListKey, setCommentListKey] = useState(0);
 
     useEffect(() => {
         fetchDecision();
@@ -202,25 +206,59 @@ export default function Show({ id }) {
                         </div>
                     </div>
 
-                    {decision.votes && decision.votes.length > 0 && (
-                        <div className="mt-6 bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                            <div className="p-6">
-                                <h3 className="font-semibold text-gray-700 mb-4">Comentarios de los votantes</h3>
-                                <div className="space-y-3">
-                                    {decision.votes
-                                        .filter(vote => vote.comment)
-                                        .map((vote) => (
-                                            <div key={vote.id} className="bg-gray-50 rounded-lg p-3">
-                                                <p className="text-sm text-gray-600">{vote.comment}</p>
-                                                <p className="text-xs text-gray-500 mt-1">
-                                                    - {vote.user?.name || 'Usuario'}
-                                                </p>
-                                            </div>
-                                        ))}
+                    {/* Sección de comentarios de la decisión */}
+                    <div className="mt-6 bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div className="p-6">
+                            {/* Formulario de comentarios primero (arriba) para usuarios autenticados */}
+                            {auth.user && decision.status === 'open' && !decision.is_expired && (
+                                <div className="mb-8 pb-6 border-b border-gray-200">
+                                    <h3 className="font-semibold text-gray-700 mb-4">Participa en la conversación</h3>
+                                    <div className="flex items-start space-x-4">
+                                        <div className="flex-shrink-0">
+                                            <Avatar user={auth.user} />
+                                        </div>
+                                        <div className="flex-1">
+                                            <CommentForm
+                                                decisionId={id}
+                                                onCommentAdded={() => {
+                                                    // Forzar la actualización de la lista de comentarios
+                                                    setCommentListKey(prevKey => prevKey + 1);
+                                                    // Desplazarse a la lista de comentarios
+                                                    const commentList = document.querySelector('#comment-list');
+                                                    if (commentList) {
+                                                        commentList.scrollIntoView({ behavior: 'smooth' });
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
+                            )}
+
+                            <div id="comment-list">
+                                <CommentList decisionId={id} key={commentListKey} />
                             </div>
+                            
+                            {/* Mostrar también los comentarios de los votantes si existen */}
+                            {decision.votes && decision.votes.filter(vote => vote.comment).length > 0 && (
+                                <div className="mt-8 pt-6 border-t border-gray-200">
+                                    <h3 className="font-semibold text-gray-700 mb-4">Comentarios de los votantes</h3>
+                                    <div className="space-y-3">
+                                        {decision.votes
+                                            .filter(vote => vote.comment)
+                                            .map((vote) => (
+                                                <div key={vote.id} className="bg-gray-50 rounded-lg p-3">
+                                                    <p className="text-sm text-gray-600">{vote.comment}</p>
+                                                    <p className="text-xs text-gray-500 mt-1">
+                                                        - {vote.user?.name || 'Usuario'}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </AuthenticatedLayout>
