@@ -44,13 +44,39 @@ export default function CommentList({ decisionId }) {
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
-        return date.toLocaleDateString("es-ES", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+
+        // Diferentes intervalos de tiempo en segundos
+        const minute = 60;
+        const hour = minute * 60;
+        const day = hour * 24;
+        const week = day * 7;
+        const month = day * 30;
+        const year = day * 365;
+
+        // Determinar el formato relativo más adecuado
+        if (diffInSeconds < minute) {
+            return "ahora mismo";
+        } else if (diffInSeconds < hour) {
+            const minutes = Math.floor(diffInSeconds / minute);
+            return `hace ${minutes} ${minutes === 1 ? "minuto" : "minutos"}`;
+        } else if (diffInSeconds < day) {
+            const hours = Math.floor(diffInSeconds / hour);
+            return `hace ${hours} ${hours === 1 ? "hora" : "horas"}`;
+        } else if (diffInSeconds < week) {
+            const days = Math.floor(diffInSeconds / day);
+            return `hace ${days} ${days === 1 ? "día" : "días"}`;
+        } else if (diffInSeconds < month) {
+            const weeks = Math.floor(diffInSeconds / week);
+            return `hace ${weeks} ${weeks === 1 ? "semana" : "semanas"}`;
+        } else if (diffInSeconds < year) {
+            const months = Math.floor(diffInSeconds / month);
+            return `hace ${months} ${months === 1 ? "mes" : "meses"}`;
+        } else {
+            const years = Math.floor(diffInSeconds / year);
+            return `hace ${years} ${years === 1 ? "año" : "años"}`;
+        }
     };
 
     if (loading && comments.length === 0) {
@@ -107,7 +133,18 @@ export default function CommentList({ decisionId }) {
                                     <h4 className="text-sm font-semibold text-gray-800">
                                         {comment.user?.name || "Usuario"}
                                     </h4>
-                                    <span className="text-xs text-gray-400">
+                                    <span
+                                        className="text-xs text-gray-400"
+                                        title={new Date(
+                                            comment.created_at
+                                        ).toLocaleString("es-ES", {
+                                            day: "2-digit",
+                                            month: "2-digit",
+                                            year: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                        })}
+                                    >
                                         {formatDate(comment.created_at)}
                                     </span>
                                 </div>
