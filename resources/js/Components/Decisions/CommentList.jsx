@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/solid";
 import Avatar from "@/Components/Avatar";
+import axios from "axios";
 
 export default function CommentList({ decisionId }) {
     const [comments, setComments] = useState([]);
@@ -14,10 +15,10 @@ export default function CommentList({ decisionId }) {
     const fetchComments = async (page = 1) => {
         setLoading(true);
         try {
-            const response = await fetch(
+            const response = await axios.get(
                 `/api/decisions/${decisionId}/comments?page=${page}`
             );
-            const data = await response.json();
+            const data = response.data;
             setComments(data.data);
             setPagination({
                 current_page: data.current_page,

@@ -5,6 +5,7 @@ import VoteOption from '@/Components/Decisions/VoteOption';
 import CommentList from '@/Components/Decisions/CommentList';
 import CommentForm from '@/Components/Decisions/CommentForm';
 import { ClockIcon, UserIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import axios from 'axios';
 import Avatar from '@/Components/Avatar';
 
 export default function Show({ id }) {
@@ -22,8 +23,8 @@ export default function Show({ id }) {
 
     const fetchDecision = async () => {
         try {
-            const response = await fetch(`/api/decisions/${id}`);
-            const data = await response.json();
+            const response = await axios.get(`/api/decisions/${id}`);
+            const data = response.data;
             setDecision(data);
             if (data.user_vote) {
                 setSelectedOption(data.user_vote.option_id);
@@ -40,28 +41,21 @@ export default function Show({ id }) {
 
         setVoting(true);
         try {
-            const response = await fetch('/api/votes', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                },
-                body: JSON.stringify({
-                    decision_id: id,
-                    option_id: selectedOption,
-                    comment: comment || null
-                })
+            await axios.post('/api/votes', {
+                decision_id: id,
+                option_id: selectedOption,
+                comment: comment || null
             });
-
-            if (response.ok) {
-                await fetchDecision();
-                setComment('');
-            } else {
-                const error = await response.json();
-                alert(error.message);
-            }
+            
+            await fetchDecision();
+            setComment('');
         } catch (error) {
             console.error('Error voting:', error);
+            if (error.response && error.response.data) {
+                alert(error.response.data.message || 'Error al votar');
+            } else {
+                alert('Error al votar. Inténtalo de nuevo.');
+            }
         } finally {
             setVoting(false);
         }
