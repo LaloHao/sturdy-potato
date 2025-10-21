@@ -1,0 +1,23 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agr-server
+    working_dir: /app
+    command: bash /app/start-server.sh
+    ports:
+      - "5173:5173"
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/vendor
+    environment:
+      - VITE_DEV_SERVER_URL=http://localhost:5173
+    networks:
+      - agr-network
+
+networks:
+  agr-network:
+    driver: bridge
