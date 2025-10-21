@@ -41,6 +41,11 @@ class Decision extends Model
     {
         return $this->hasMany(Vote::class);
     }
+    
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
 
     public function finalOption(): BelongsTo
     {
