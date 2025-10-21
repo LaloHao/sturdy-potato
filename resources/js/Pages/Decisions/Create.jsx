@@ -5,6 +5,7 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import axios from 'axios';
 
 export default function Create() {
     const { data, setData, processing, errors, reset } = useForm({
@@ -20,24 +21,13 @@ export default function Create() {
         e.preventDefault();
 
         try {
-            const response = await fetch('/api/decisions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                },
-                body: JSON.stringify(data)
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                router.visit(`/decisions/${result.decision.id}`);
-            } else {
-                const errorData = await response.json();
-                console.error('Error:', errorData);
-            }
+            const response = await axios.post('/api/decisions', data);
+            router.visit(`/decisions/${response.data.decision.id}`);
         } catch (error) {
             console.error('Error creating decision:', error);
+            if (error.response && error.response.data) {
+                console.error('Error:', error.response.data);
+            }
         }
     };
 

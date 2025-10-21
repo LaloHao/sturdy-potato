@@ -2,17 +2,6 @@
 
 Una plataforma web donde los usuarios pueden crear decisiones importantes de su vida y recibir votos de la comunidad para ayudarles a decidir.
 
-## ⚠️ IMPORTANTE PARA CANDIDATOS
-
-**NO HAGAS FORK DE ESTE REPOSITORIO**
-
-Para mantener la confidencialidad de tu solución:
-1. **Clona** el repositorio (no hagas fork)
-2. **Crea tu propio repositorio publico** en tu cuenta
-3. **Envía el link de tu repositorio** cuando completes el reto
-
-Esto evita que otros candidatos puedan ver tu solución.
-
 ## 🚀 Características Principales
 
 ### Sistema de Usuarios
@@ -34,6 +23,17 @@ Esto evita que otros candidatos puedan ver tu solución.
 - ✅ Visualización con barras de progreso
 - ✅ Resultados en tiempo real
 - ✅ No puedes votar en tus propias decisiones
+
+### Sistema de Comentarios
+- ✅ Comentarios en decisiones independientes de los votos
+- ✅ Avatares personalizados para cada usuario
+- ✅ Timestamps relativos (ej: "hace 2 horas")
+- ✅ Paginación de comentarios con scroll infinito
+- ✅ Incremento automático de karma al comentar
+- ✅ Edición y eliminación de comentarios propios
+- ✅ Textarea auto-expandible para mayor comodidad
+- ✅ Diálogo de confirmación antes de publicar o eliminar
+- ✅ Notificación al dueño de la decisión cuando alguien comenta
 
 ### Dashboard Personal
 - ✅ Estadísticas de decisiones y votos
@@ -123,11 +123,15 @@ laravel-app/
 │   ├── Http/Controllers/
 │   │   ├── DecisionController.php    # API de decisiones
 │   │   ├── VoteController.php        # Sistema de votación
+│   │   ├── CommentController.php     # Sistema de comentarios
+│   │   ├── NotificationController.php # Sistema de notificaciones
 │   │   └── DashboardController.php   # Dashboard
 │   └── Models/
 │       ├── Decision.php              # Modelo de decisión
 │       ├── Option.php                # Opciones de decisión
 │       ├── Vote.php                  # Votos
+│       ├── Comment.php               # Comentarios
+│       ├── CommentNotification.php   # Notificaciones de comentarios
 │       └── User.php                  # Usuario extendido
 ├── database/
 │   ├── data/
@@ -138,7 +142,13 @@ laravel-app/
 ├── resources/
 │   └── js/
 │       ├── Components/
+│       │   ├── Avatar.jsx           # Componente de avatar de usuario
 │       │   └── Decisions/           # Componentes React
+│       │       ├── CommentList.jsx  # Lista de comentarios
+│       │       ├── CommentForm.jsx  # Formulario para crear comentarios
+│       │       └── ...
+│       │   ├── NotificationDropdown.jsx # Dropdown de notificaciones
+│       │   └── ...
 │       └── Pages/
 │           └── Decisions/           # Páginas de decisiones
 │               ├── Index.jsx        # Lista de decisiones
@@ -177,6 +187,105 @@ php artisan db:seed --class=DecisionSeeder
 5. **Dashboard**: Ve tus estadísticas, karma y badge
 6. **Mis Decisiones**: Gestiona y marca tus decisiones como resueltas
 7. **Decisiones Votadas**: Revisa en qué has participado
+8. **Comentarios**: Comenta en las decisiones para dar tu opinión independiente de tu voto
+
+## 💬 Sistema de Comentarios
+
+La plataforma ahora cuenta con un sistema de comentarios independiente de los votos, permitiendo a los usuarios expresar sus opiniones de manera más detallada.
+
+### Capturas de Pantalla
+
+#### Comentarios en una decisión
+![Comentarios en una decisión](/capturas/3-comentarios.png)
+
+#### Comentarios sin autenticación
+![Comentarios sin autenticación](/capturas/comentarios-sin-autentication.png)
+
+#### Notificaciones de comentarios
+![Notificaciones de comentarios](/capturas/notification.png)
+
+#### Tests de la funcionalidad
+![Tests de la funcionalidad](/capturas/tests.png)
+
+### Instrucciones para probar la funcionalidad
+
+1. **Ver comentarios**: Navega a cualquier decisión para ver los comentarios existentes. Los comentarios son visibles para todos los usuarios, estén autenticados o no.
+
+2. **Añadir comentarios**: 
+   - Inicia sesión con cualquier cuenta
+   - Navega a una decisión activa
+   - Escribe tu comentario en el formulario en la parte superior de la sección de comentarios
+   - Haz clic en "Enviar comentario"
+   
+3. **Visualización de tiempo relativo**:
+   - Los comentarios muestran el tiempo transcurrido desde que fueron publicados (ej: "hace 5 minutos", "hace 2 horas")
+   - Pasa el cursor sobre el timestamp para ver la fecha y hora exactas
+
+4. **Recompensa de karma**:
+   - Al añadir un comentario, tu karma aumentará automáticamente en 5 puntos
+   - Esto puede cambiar tu badge si alcanzas los umbrales necesarios
+
+5. **Scroll Infinito**:
+   - Si hay más de 20 comentarios, se cargarán automáticamente más comentarios al llegar al final de la página
+   - Un indicador de carga muestra cuando se están cargando más comentarios
+
+6. **Editar y Eliminar Comentarios**:
+   - Los usuarios pueden editar y eliminar sus propios comentarios
+   - Botones de edición y eliminación aparecen solo para el autor del comentario
+   - Diálogo de confirmación antes de eliminar un comentario
+   
+7. **Sistema de Notificaciones**:
+   - Cuando un usuario comenta en una decisión, el dueño recibe una notificación
+   - El icono de campana en la barra de navegación muestra el número de notificaciones no leídas
+   - Al hacer clic en el icono, se muestra un dropdown con las notificaciones recientes
+   - Las notificaciones no leídas tienen un fondo azul claro
+   - Al hacer clic en una notificación, se marca como leída y redirige a la decisión correspondiente
+   - Botón "Marcar todas como leídas" para limpiar todas las notificaciones pendientes
+
+8. **Mejoras de UX**:
+   - Textarea auto-expandible que crece con el contenido
+   - Diálogo de confirmación antes de publicar un nuevo comentario
+   - Notificaciones de éxito y error para acciones del usuario
+
+### Decisiones Técnicas
+
+1. **Modelo de datos independiente**:
+   - Se creó un modelo `Comment` separado del modelo `Vote` para permitir comentarios sin necesidad de votar
+   - Esto permite una mayor flexibilidad y separación de responsabilidades
+
+2. **Timestamps relativos**:
+   - Implementación de timestamps relativos para mejorar la experiencia del usuario
+   - Se mantiene la fecha exacta accesible mediante tooltips para preservar el contexto temporal
+
+3. **Avatares personalizados**:
+   - Componente `Avatar` reutilizable que genera colores consistentes basados en el nombre de usuario
+   - Muestra las iniciales del usuario cuando no hay imagen de avatar disponible
+
+4. **Seguridad en las peticiones**:
+   - Uso de Axios para manejar automáticamente los tokens CSRF
+   - Validación tanto en el cliente como en el servidor para los comentarios
+   - Verificación de autorización para editar/eliminar solo los comentarios propios
+
+5. **API RESTful**:
+   - Endpoints separados para listar (`GET`), crear (`POST`), editar (`PUT`) y eliminar (`DELETE`) comentarios
+   - Paginación implementada en el backend para optimizar el rendimiento
+   - Implementación de scroll infinito en el frontend
+
+6. **UX Avanzada**:
+   - TextArea auto-expandible que se ajusta al contenido a medida que escribes
+   - Diálogos de confirmación para prevenir acciones accidentales
+   - Intersection Observer para implementar scroll infinito de manera eficiente
+
+7. **Sistema de Notificaciones**:
+   - Implementación de un sistema personalizado de notificaciones con modelo dedicado
+   - Notificación en tiempo real cuando se comenta en una decisión propia
+   - Interfaz visual que muestra el estado leído/no leído de las notificaciones
+   - Actualización automática del contador de notificaciones no leídas
+   - Control de permisos para asegurar que solo el dueño vea sus notificaciones
+
+8. **Pruebas automatizadas**:
+   - Tests que validan tanto la funcionalidad como la seguridad del sistema de comentarios y notificaciones
+   - Pruebas de integración para validar el flujo completo de la funcionalidad
 
 ## 🏗️ Stack Tecnológico
 
@@ -192,6 +301,7 @@ php artisan db:seed --class=DecisionSeeder
 ### Públicos
 - `GET /api/decisions` - Lista de decisiones
 - `GET /api/decisions/{id}` - Ver decisión
+- `GET /api/decisions/{decision}/comments` - Listar comentarios de una decisión
 
 ### Autenticados
 - `POST /api/decisions` - Crear decisión
@@ -201,6 +311,13 @@ php artisan db:seed --class=DecisionSeeder
 - `GET /api/voted-decisions` - Decisiones votadas
 - `POST /api/votes` - Votar
 - `DELETE /api/votes/{id}` - Eliminar voto
+- `POST /api/decisions/{decision}/comments` - Crear comentario
+- `PUT /api/decisions/{decision}/comments/{comment}` - Editar comentario
+- `DELETE /api/decisions/{decision}/comments/{comment}` - Eliminar comentario
+- `GET /api/notifications` - Listar notificaciones
+- `GET /api/notifications/unread-count` - Obtener número de notificaciones no leídas
+- `POST /api/notifications/{id}/mark-as-read` - Marcar notificación como leída
+- `POST /api/notifications/mark-all-read` - Marcar todas las notificaciones como leídas
 
 ## 🐛 Solución de Problemas
 

@@ -4,6 +4,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DecisionController;
 use App\Http\Controllers\VoteController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -54,6 +56,17 @@ Route::middleware('auth')->group(function () {
         Route::get('voted-decisions', [DecisionController::class, 'votedDecisions']);
         Route::post('votes', [VoteController::class, 'store']);
         Route::delete('votes/{id}', [VoteController::class, 'destroy']);
+
+        // Comments routes for authenticated users
+        Route::post('decisions/{decision}/comments', [CommentController::class, 'store']);
+        Route::put('decisions/{decision}/comments/{comment}', [CommentController::class, 'update']);
+        Route::delete('decisions/{decision}/comments/{comment}', [CommentController::class, 'destroy']);
+        
+        // Notification routes
+        Route::get('notifications', [NotificationController::class, 'index']);
+        Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('notifications/{id}/mark-as-read', [NotificationController::class, 'markAsRead']);
+        Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     });
 });
 
@@ -61,6 +74,8 @@ Route::middleware('auth')->group(function () {
 Route::prefix('api')->group(function () {
     Route::get('decisions', [DecisionController::class, 'index']);
     Route::get('decisions/{id}', [DecisionController::class, 'show']);
+    // Comments public route
+    Route::get('decisions/{decision}/comments', [CommentController::class, 'index']);
 });
 
 require __DIR__.'/auth.php';
