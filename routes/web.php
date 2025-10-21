@@ -5,6 +5,7 @@ use App\Http\Controllers\DecisionController;
 use App\Http\Controllers\VoteController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -60,6 +61,12 @@ Route::middleware('auth')->group(function () {
         Route::post('decisions/{decision}/comments', [CommentController::class, 'store']);
         Route::put('decisions/{decision}/comments/{comment}', [CommentController::class, 'update']);
         Route::delete('decisions/{decision}/comments/{comment}', [CommentController::class, 'destroy']);
+        
+        // Notification routes
+        Route::get('notifications', [NotificationController::class, 'index']);
+        Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('notifications/{id}/mark-as-read', [NotificationController::class, 'markAsRead']);
+        Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     });
 });
 

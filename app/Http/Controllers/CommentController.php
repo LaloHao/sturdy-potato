@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Comment;
+use App\Models\CommentNotification;
 use App\Models\Decision;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -51,13 +52,29 @@ class CommentController extends Controller
         // Load the user relation for the response
         $comment->load('user:id,name,email,avatar');
 
-        // Increment user's karma
+        // Get the authenticated user (commenter)
         $user = Auth::user();
+        
+        // Increment user's karma
         $user->karma += 5;
         $user->save();
 
         // Update user's badge based on new karma
         $user->updateBadge();
+
+        // Notify the decision owner if they are not the one commenting
+        $decisionOwner = $decision->user;
+        if ($decisionOwner && $decisionOwner->id !== $user->id) {
+            // Crear una notificación personalizada en nuestra tabla
+            CommentNotification::create([
+                'user_id' => $decisionOwner->id,
+                'comment_id' => $comment->id,
+                'decision_id' => $decision->id,
+                'commenter_id' => $user->id,
+                'comment_preview' => substr($comment->content, 0, 100) . (strlen($comment->content) > 100 ? '...' : ''),
+                'read' => false,
+            ]);
+        }
 
         return response()->json($comment, 201);
     }

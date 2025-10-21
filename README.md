@@ -33,6 +33,7 @@ Una plataforma web donde los usuarios pueden crear decisiones importantes de su 
 - ✅ Edición y eliminación de comentarios propios
 - ✅ Textarea auto-expandible para mayor comodidad
 - ✅ Diálogo de confirmación antes de publicar o eliminar
+- ✅ Notificación al dueño de la decisión cuando alguien comenta
 
 ### Dashboard Personal
 - ✅ Estadísticas de decisiones y votos
@@ -123,12 +124,14 @@ laravel-app/
 │   │   ├── DecisionController.php    # API de decisiones
 │   │   ├── VoteController.php        # Sistema de votación
 │   │   ├── CommentController.php     # Sistema de comentarios
+│   │   ├── NotificationController.php # Sistema de notificaciones
 │   │   └── DashboardController.php   # Dashboard
 │   └── Models/
 │       ├── Decision.php              # Modelo de decisión
 │       ├── Option.php                # Opciones de decisión
 │       ├── Vote.php                  # Votos
 │       ├── Comment.php               # Comentarios
+│       ├── CommentNotification.php   # Notificaciones de comentarios
 │       └── User.php                  # Usuario extendido
 ├── database/
 │   ├── data/
@@ -144,6 +147,8 @@ laravel-app/
 │       │       ├── CommentList.jsx  # Lista de comentarios
 │       │       ├── CommentForm.jsx  # Formulario para crear comentarios
 │       │       └── ...
+│       │   ├── NotificationDropdown.jsx # Dropdown de notificaciones
+│       │   └── ...
 │       └── Pages/
 │           └── Decisions/           # Páginas de decisiones
 │               ├── Index.jsx        # Lista de decisiones
@@ -196,6 +201,9 @@ La plataforma ahora cuenta con un sistema de comentarios independiente de los vo
 #### Comentarios sin autenticación
 ![Comentarios sin autenticación](/capturas/comentarios-sin-autentication.png)
 
+#### Notificaciones de comentarios
+![Notificaciones de comentarios](/capturas/notification.png)
+
 #### Tests de la funcionalidad
 ![Tests de la funcionalidad](/capturas/tests.png)
 
@@ -226,7 +234,15 @@ La plataforma ahora cuenta con un sistema de comentarios independiente de los vo
    - Botones de edición y eliminación aparecen solo para el autor del comentario
    - Diálogo de confirmación antes de eliminar un comentario
    
-7. **Mejoras de UX**:
+7. **Sistema de Notificaciones**:
+   - Cuando un usuario comenta en una decisión, el dueño recibe una notificación
+   - El icono de campana en la barra de navegación muestra el número de notificaciones no leídas
+   - Al hacer clic en el icono, se muestra un dropdown con las notificaciones recientes
+   - Las notificaciones no leídas tienen un fondo azul claro
+   - Al hacer clic en una notificación, se marca como leída y redirige a la decisión correspondiente
+   - Botón "Marcar todas como leídas" para limpiar todas las notificaciones pendientes
+
+8. **Mejoras de UX**:
    - Textarea auto-expandible que crece con el contenido
    - Diálogo de confirmación antes de publicar un nuevo comentario
    - Notificaciones de éxito y error para acciones del usuario
@@ -260,8 +276,15 @@ La plataforma ahora cuenta con un sistema de comentarios independiente de los vo
    - Diálogos de confirmación para prevenir acciones accidentales
    - Intersection Observer para implementar scroll infinito de manera eficiente
 
-6. **Pruebas automatizadas**:
-   - Tests que validan tanto la funcionalidad como la seguridad del sistema de comentarios
+7. **Sistema de Notificaciones**:
+   - Implementación de un sistema personalizado de notificaciones con modelo dedicado
+   - Notificación en tiempo real cuando se comenta en una decisión propia
+   - Interfaz visual que muestra el estado leído/no leído de las notificaciones
+   - Actualización automática del contador de notificaciones no leídas
+   - Control de permisos para asegurar que solo el dueño vea sus notificaciones
+
+8. **Pruebas automatizadas**:
+   - Tests que validan tanto la funcionalidad como la seguridad del sistema de comentarios y notificaciones
    - Pruebas de integración para validar el flujo completo de la funcionalidad
 
 ## 🏗️ Stack Tecnológico
@@ -291,6 +314,10 @@ La plataforma ahora cuenta con un sistema de comentarios independiente de los vo
 - `POST /api/decisions/{decision}/comments` - Crear comentario
 - `PUT /api/decisions/{decision}/comments/{comment}` - Editar comentario
 - `DELETE /api/decisions/{decision}/comments/{comment}` - Eliminar comentario
+- `GET /api/notifications` - Listar notificaciones
+- `GET /api/notifications/unread-count` - Obtener número de notificaciones no leídas
+- `POST /api/notifications/{id}/mark-as-read` - Marcar notificación como leída
+- `POST /api/notifications/mark-all-read` - Marcar todas las notificaciones como leídas
 
 ## 🐛 Solución de Problemas
 
